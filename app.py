@@ -35,9 +35,7 @@ def api_status():
     })
 
 def start_async_monitor():
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(monitor.run())
+    asyncio.run(monitor.run())
 
 if __name__ == "__main__":
     threading.Thread(target=start_async_monitor, daemon=True).start()
