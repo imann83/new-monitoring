@@ -12,13 +12,6 @@ class AsyncSkinBaronMonitor:
         self.check_interval = check_interval
         self.notifier = AsyncNotifier()
         self.previous_signatures = set()
-        self.session = aiohttp.ClientSession(
-            headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-                "Accept": "text/html",
-                "Accept-Language": "en-US,en;q=0.5"
-            }
-        )
         self.status = {
             "is_running": False,
             "start_time": None,
@@ -29,9 +22,14 @@ class AsyncSkinBaronMonitor:
 
     async def fetch_page(self):
         try:
-            async with self.session.get(self.url, timeout=10) as response:
-                html = await response.text()
-                return BeautifulSoup(html, "html.parser")
+            async with aiohttp.ClientSession(headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                "Accept": "text/html",
+                "Accept-Language": "en-US,en;q=0.5"
+            }) as session:
+                async with session.get(self.url, timeout=10) as response:
+                    html = await response.text()
+                    return BeautifulSoup(html, "html.parser")
         except Exception as e:
             logging.error(f"Fetch error: {e}")
             self.status["last_error"] = str(e)
