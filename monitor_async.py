@@ -53,6 +53,7 @@ class AsyncSkinBaronMonitor:
             elements = soup.select(selector)  # انتخاب المنت‌ها با استفاده از هر یک از این انتخابگرها
             if elements:
                 for element in elements:
+                    # اطمینان حاصل می‌کنیم که تنها المان‌های HTML برای make_signature ارسال می‌شوند
                     product_info = {
                         'image': element.select_one('.offer-image img')['src'] if element.select_one('.offer-image img') else None,
                         'name': element.select_one('.offer-info .product-name').text.strip() if element.select_one('.offer-info .product-name') else None,
@@ -60,18 +61,27 @@ class AsyncSkinBaronMonitor:
                         'availability': element.select_one('.availability-wrapper.right').text.strip() if element.select_one('.availability-wrapper.right') else None,
                         'badges': element.select_one('.badge-wrapper.souvenir').text.strip() if element.select_one('.badge-wrapper.souvenir') else None
                     }
-                    products.append(product_info)
 
+                    # فقط وقتی که اطلاعات مفید پیدا کردیم، عنصر HTML را به لیست اضافه می‌کنیم
+                    if any(product_info.values()):  # بررسی می‌کنیم که آیا حداقل یک مقدار معتبر وجود دارد
+                        products.append(element)  # اضافه کردن عنصر HTML به لیست
         if not products:
             logging.warning("No products found with the given selectors.")
         return products
 
     def make_signature(self, element):
-        # اصلاح برای جلوگیری از خطای 'dict' object has no attribute 'get_text'
-        if isinstance(element, str):  # اگر این یک رشته است، برگردون
-            return hash(element)
-        text = element.get_text(strip=True) if element else ""  # اگر عنصر موجود بود، متن رو بگیر
-        return hash(text)
+        # بررسی می‌کنیم که آیا این element یک دیکشنری نباشه
+        if isinstance(element, dict):
+            logging.warning(f"Received a dict instead of an HTML element: {element}")
+            return hash(str(element))  # در صورتی که یک dict باشد، هش رشته آن را می‌زنیم.
+        
+        # اگر این element یک عنصر HTML است و متد get_text دارد
+        if hasattr(element, 'get_text'):
+            text = element.get_text(strip=True) if element else ""
+            return hash(text)
+
+        # در غیر این صورت، هش از رشته خود عنصر ایجاد می‌کنیم
+        return hash(str(element))
 
     async def check_for_changes(self):
         soup = await self.fetch_page()
