@@ -67,11 +67,18 @@ class AsyncSkinBaronMonitor:
         return products
 
     def make_signature(self, element):
-        # اصلاح برای جلوگیری از خطای 'dict' object has no attribute 'get_text'
-        if isinstance(element, str):  # اگر این یک رشته است، برگردون
-            return hash(element)
-        text = element.get_text(strip=True) if element else ""  # اگر عنصر موجود بود، متن رو بگیر
-        return hash(text)
+        # بررسی می‌کنیم که آیا عنصر از نوع 'dict' نیست
+        if isinstance(element, dict):
+            logging.warning(f"Received a dict instead of an HTML element: {element}")
+            return hash(str(element))  # در صورتی که یک dict باشد، هش رشته آن را می‌زنیم.
+
+        # اگر element از نوع HTML بود
+        if hasattr(element, 'get_text'):
+            text = element.get_text(strip=True) if element else ""
+            return hash(text)
+
+        # در غیر این صورت، یک هش از رشته عنصر می‌سازیم
+        return hash(str(element))
 
     async def check_for_changes(self):
         soup = await self.fetch_page()
