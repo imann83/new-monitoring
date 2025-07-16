@@ -67,8 +67,11 @@ class AsyncSkinBaronMonitor:
         return products
 
     def make_signature(self, element):
-        text = element.get_text(strip=True)
-        return hash(text)
+    # چک می‌کنیم که element یک شیء از نوع dict نباشه
+    if isinstance(element, str):  # اگر این یک رشته است، برگردون
+        return hash(element)
+    text = element.get_text(strip=True) if element else ""  # اگر عنصر موجود بود، متن رو بگیر
+    return hash(text)
 
     async def check_for_changes(self):
         soup = await self.fetch_page()
