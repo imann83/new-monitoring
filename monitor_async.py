@@ -1,4 +1,3 @@
-
 import aiohttp
 import asyncio
 import logging
@@ -36,11 +35,13 @@ class AsyncSkinBaronMonitor:
             return None
 
     async def extract_products(self, soup):
-        selectors = ['.item-card', '.product-item', '[data-item-id]']
+        # Updated selectors for more accurate extraction of products
+        selectors = ['div.card.item-card', 'div.product', 'div.market-item', '[data-item-id]']
         for selector in selectors:
             elements = soup.select(selector)
             if elements and len(elements) >= 1:
                 return elements[:10]
+        logging.warning("No products found with the given selectors.")
         return []
 
     def make_signature(self, element):
@@ -79,6 +80,3 @@ class AsyncSkinBaronMonitor:
                 self.status["last_error"] = str(e)
                 logging.error(f"Error in loop: {e}")
             await asyncio.sleep(self.check_interval)
-
-    async def close(self):
-        await self.session.close()
