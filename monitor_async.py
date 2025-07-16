@@ -35,14 +35,36 @@ class AsyncSkinBaronMonitor:
             return None
 
     async def extract_products(self, soup):
-        # Updated selectors for more accurate extraction of products
-        selectors = ['div.card.item-card', 'div.product', 'div.market-item', '[data-item-id]']
+        # استفاده از ساختار دقیقتر CSS Selectors برای استخراج محصولات
+        selectors = [
+            '.click-wrapper .offer-card',  # تگ اصلی که پیشنهادات رو شامل میشه
+            '.gem-wrapper',  # برای بخش gem
+            '.availability-wrapper.right',  # برای وضعیت موجودی
+            '.product-stickers',  # برای برچسب‌ها
+            '.offer-image',  # برای عکس پیشنهاد
+            '.badge-wrapper.souvenir',  # برای نماد خاص
+            '.offer-info',  # برای اطلاعات پیشنهاد
+            '.price-info'  # برای نمایش قیمت
+        ]
+
+        products = []
+
         for selector in selectors:
-            elements = soup.select(selector)
-            if elements and len(elements) >= 1:
-                return elements[:10]
-        logging.warning("No products found with the given selectors.")
-        return []
+            elements = soup.select(selector)  # انتخاب المنت‌ها با استفاده از هر یک از این انتخابگرها
+            if elements:
+                for element in elements:
+                    product_info = {
+                        'image': element.select_one('.offer-image img')['src'] if element.select_one('.offer-image img') else None,
+                        'name': element.select_one('.offer-info .product-name').text.strip() if element.select_one('.offer-info .product-name') else None,
+                        'price': element.select_one('.price-info .price').text.strip() if element.select_one('.price-info .price') else None,
+                        'availability': element.select_one('.availability-wrapper.right').text.strip() if element.select_one('.availability-wrapper.right') else None,
+                        'badges': element.select_one('.badge-wrapper.souvenir').text.strip() if element.select_one('.badge-wrapper.souvenir') else None
+                    }
+                    products.append(product_info)
+
+        if not products:
+            logging.warning("No products found with the given selectors.")
+        return products
 
     def make_signature(self, element):
         text = element.get_text(strip=True)
